@@ -51,11 +51,12 @@ window#waybar {
 #tray,
 #backlight,
 #disk {
-    background: #1e1e2e;
-    padding: 0px 10px;
-    margin: 3px 0px;
-    margin-top: 5px;
-    /* border: 1px solid #181825; */
+  /*background: #1e1e2e;*/
+  background: #000000;
+  padding: 0px 10px;
+  margin: 3px 0px;
+  margin-top: 5px;
+  /* border: 1px solid #181825; */
 }
 
 #backlight {
@@ -68,11 +69,11 @@ window#waybar {
 }
 
 #workspaces {
-    background: #1e1e2e;
-    border-radius: 10px;
-    margin-left: 10px;
-    padding-right: 0px;
-    padding-left: 5px;
+  /*background: #1e1e2e;*/
+  border-radius: 10px;
+  margin-left: 10px;
+  padding-right: 0px;
+  padding-left: 5px;
 }
 
 #cpu {
@@ -85,7 +86,9 @@ window#waybar {
 }
 
 #disk {
-    border-radius: 10px 0px 0px 10px;
+  color: #a6adc8;
+  border-radius: 10px 10px 10px 10px;
+  margin-right: 10px;
 }
 
 #window {

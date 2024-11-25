@@ -8,6 +8,7 @@
     "height": 0,
     "modules-left": [
         "clock",
+        "disk",
         "hyprland/workspaces"
     ],
     "modules-center": ["hyprland/window"],
@@ -15,7 +16,7 @@
         "tray",
         "network",
         "battery",
-        "disk",
+        //"disk",
         "backlight",
         "pulseaudio",
         "pulseaudio#microphone"
@@ -38,7 +39,8 @@
     },
 
     "clock": {
-        "format": "{:%A    %b-%d-%Y    %I:%M %p}",
+        //"format": "{:%A    %b-%d-%Y    %I:%M %p}",
+        "format": "  {:%H:%M}",
         "interval": 60,
         "rotate": 0,
         "tooltip-format": "<tt>{calendar}</tt>",
@@ -120,9 +122,9 @@
     },
 
     "disk": {
-        "format": "  {free}",
+        "format": "  {percentage_free}%",
         "path": "/",
-        "tooltip-format": "Used: {used} of {total} on {path}",
+        "tooltip-format": "Used: {used} of {total} on {path}\nFree: {free}",
         "interval": 60
     }
 }
