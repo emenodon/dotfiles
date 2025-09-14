@@ -1,9 +1,20 @@
-# 🏠 Dotfiles
+# 🏠 Dotfiles  
 
-Personal configuration files for my Linux setup.
-Focused on a **minimal**, **lightweight**, and **functional** desktop environment.
+Personal configuration files for my Linux setup.  
+Built with a focus on **minimalism**, **lightweight performance**, and a **functional workflow**.  
 
-## 📂 Window Managers
 
-- [i3WM](./i3wm) – tiling window manager setup  
-- [DWM](https://github.com/emenodon/nub-dwm) – suckless dynamic window manager setup
+## 📂 Window Managers  
+
+✨ Choose your preferred environment:  
+
+-  [**i3WM**](./i3wm)  
+-  [**DWM**](https://github.com/emenodon/nub-dwm)
+
+
+## 🎯 Goals  
+
+- 🚀 Fast startup, minimal resource usage  
+- ⌨️ Keyboard-driven workflow  
+- 🎨 Clean look with only essential theming  
+- 🛠 Easy to reproduce on any system  
