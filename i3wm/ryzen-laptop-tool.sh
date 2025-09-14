@@ -1,41 +1,79 @@
 #!/usr/bin/env bash
 # =================================================
-# Ryzen Laptop Optimizer Tool for Ubuntu + i3
+# Ryzen Laptop Optimizer Tool (Ubuntu + Arch)
 # Features:
 #   [1] Optimize : TLP, ZRAM, GRUB tweaks, GPU setup
-#   [2] Rollback : Restore default Ubuntu settings
+#   [2] Rollback : Restore default settings
 #   [3] Status   : Show system optimization status
 # =================================================
 
+# Detect distro
+if [ -f /etc/arch-release ]; then
+    DISTRO="arch"
+    PKG_INSTALL="sudo pacman -S --noconfirm --needed"
+    PKG_REMOVE="sudo pacman -Rns --noconfirm"
+elif [ -f /etc/debian_version ]; then
+    DISTRO="debian"
+    PKG_INSTALL="sudo apt install -y"
+    PKG_REMOVE="sudo apt purge -y"
+else
+    echo "❌ Unsupported distro"
+    exit 1
+fi
+
 optimize() {
     echo "🔧 Updating system..."
-    sudo apt update && sudo apt upgrade -y
+    if [ "$DISTRO" = "arch" ]; then
+        sudo pacman -Syu --noconfirm
+    else
+        sudo apt update && sudo apt upgrade -y
+    fi
 
     echo "🔧 Installing essential packages..."
-    sudo apt install -y \
-        tlp tlp-rdw powertop zram-tools \
-        mesa-vulkan-drivers mesa-utils \
-        htop btop lm-sensors
+    if [ "$DISTRO" = "arch" ]; then
+        $PKG_INSTALL tlp powertop zram-generator mesa mesa-utils htop btop lm_sensors
+    else
+        $PKG_INSTALL tlp tlp-rdw powertop zram-tools mesa-vulkan-drivers mesa-utils htop btop lm-sensors
+    fi
 
     echo "⚡ Enabling TLP..."
     sudo systemctl enable tlp
     sudo systemctl start tlp
 
     echo "🗜️ Configuring ZRAM..."
-    sudo bash -c 'cat > /etc/default/zramswap <<EOF
+    if [ "$DISTRO" = "arch" ]; then
+        sudo bash -c 'cat > /etc/systemd/zram-generator.conf <<EOF
+[zram0]
+zram-size = ram / 2
+compression-algorithm = zstd
+EOF'
+        sudo systemctl daemon-reexec
+        sudo systemctl start systemd-zram-setup@zram0
+    else
+        sudo bash -c 'cat > /etc/default/zramswap <<EOF
 ALGO=zstd
 PERCENT=50
 EOF'
-    sudo systemctl enable --now zramswap
+        sudo systemctl enable --now zramswap
+    fi
 
     echo "📝 Optimizing GRUB..."
-    sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash mitigations=off nowatchdog"/' /etc/default/grub
-    sudo update-grub
+    if [ "$DISTRO" = "arch" ]; then
+        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash mitigations=off nowatchdog"/' /etc/default/grub
+        sudo grub-mkconfig -o /boot/grub/grub.cfg
+    else
+        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash mitigations=off nowatchdog"/' /etc/default/grub
+        sudo update-grub
+    fi
 
     echo "🎮 Checking GPU..."
     if lspci | grep -i nvidia > /dev/null; then
-        echo "⚠️ NVIDIA GPU detected → installing driver..."
-        sudo ubuntu-drivers autoinstall
+        echo "⚠️ NVIDIA GPU detected..."
+        if [ "$DISTRO" = "arch" ]; then
+            $PKG_INSTALL nvidia nvidia-utils
+        else
+            sudo ubuntu-drivers autoinstall
+        fi
     else
         echo "✅ AMD iGPU detected, Mesa driver already installed."
     fi
@@ -53,22 +91,34 @@ rollback() {
     echo "⚡ Removing TLP..."
     sudo systemctl disable tlp
     sudo systemctl stop tlp
-    sudo apt purge -y tlp tlp-rdw
+    $PKG_REMOVE tlp
 
     echo "🗜️ Disabling ZRAM..."
-    sudo systemctl disable --now zramswap
-    sudo apt purge -y zram-tools
+    if [ "$DISTRO" = "arch" ]; then
+        sudo rm -f /etc/systemd/zram-generator.conf
+        sudo systemctl stop systemd-zram-setup@zram0
+    else
+        sudo systemctl disable --now zramswap
+        $PKG_REMOVE zram-tools
+        sudo rm -f /etc/default/zramswap
+    fi
 
     echo "📝 Restoring GRUB defaults..."
-    sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
-    sudo update-grub
+    if [ "$DISTRO" = "arch" ]; then
+        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
+        sudo grub-mkconfig -o /boot/grub/grub.cfg
+    else
+        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
+        sudo update-grub
+    fi
 
     echo "🧹 Removing extra tools..."
-    sudo apt purge -y powertop htop btop lm-sensors mesa-vulkan-drivers mesa-utils
-    sudo apt autoremove -y
-
-    echo "🧽 Cleaning configs..."
-    sudo rm -f /etc/default/zramswap
+    if [ "$DISTRO" = "arch" ]; then
+        $PKG_REMOVE powertop htop btop lm_sensors mesa mesa-utils nvidia nvidia-utils
+    else
+        $PKG_REMOVE powertop htop btop lm-sensors mesa-vulkan-drivers mesa-utils nvidia*
+        sudo apt autoremove -y
+    fi
 
     echo "✅ Rollback complete!"
     echo "📌 Please reboot your system to apply changes."
@@ -88,7 +138,11 @@ status_check() {
 
     echo
     echo "🎮 GPU info:"
-    glxinfo | grep "OpenGL renderer" || echo "❌ mesa-utils not installed"
+    if command -v glxinfo >/dev/null 2>&1; then
+        glxinfo | grep "OpenGL renderer"
+    else
+        echo "❌ glxinfo not available"
+    fi
 
     echo
     echo "🌡️ CPU Temperature:"
@@ -109,6 +163,8 @@ clear
 echo "========================================"
 echo " 🔧 Ryzen Laptop Optimizer Tool"
 echo "========================================"
+echo "Detected distro: $DISTRO"
+echo "----------------------------------------"
 echo "1) Optimize (Enable TLP, ZRAM, GRUB tweaks, GPU check)"
 echo "2) Rollback (Restore default settings)"
 echo "3) Status   (Check current optimization status)"
