@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # =================================================
-# Ryzen Laptop Optimizer Tool (Ubuntu + Arch)
+# Ryzen Laptop Optimizer Tool (Universal)
+# Supports: Ubuntu/Debian, Arch/Endeavour/CachyOS
+# Bootloaders: GRUB, Limine (warning for manual edit)
 # Features:
-#   [1] Optimize : TLP, ZRAM, GRUB tweaks, GPU setup
-#   [2] Rollback : Restore default settings
-#   [3] Status   : Show system optimization status
+#   [1] Optimize
+#   [2] Rollback
+#   [3] Status Check
 # =================================================
 
+# ------------------------------
 # Detect distro
+# ------------------------------
 if [ -f /etc/arch-release ]; then
     DISTRO="arch"
     PKG_INSTALL="sudo pacman -S --noconfirm --needed"
@@ -21,6 +25,20 @@ else
     exit 1
 fi
 
+# ------------------------------
+# Detect bootloader
+# ------------------------------
+if [ -f /boot/grub/grub.cfg ]; then
+    BOOTLOADER="grub"
+elif [ -f /boot/limine/limine.cfg ]; then
+    BOOTLOADER="limine"
+else
+    BOOTLOADER="unknown"
+fi
+
+# ------------------------------
+# Functions
+# ------------------------------
 optimize() {
     echo "🔧 Updating system..."
     if [ "$DISTRO" = "arch" ]; then
@@ -57,13 +75,19 @@ EOF'
         sudo systemctl enable --now zramswap
     fi
 
-    echo "📝 Optimizing GRUB..."
-    if [ "$DISTRO" = "arch" ]; then
-        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash mitigations=off nowatchdog"/' /etc/default/grub
-        sudo grub-mkconfig -o /boot/grub/grub.cfg
+    echo "📝 Optimizing kernel boot parameters..."
+    if [ "$BOOTLOADER" = "grub" ]; then
+        if [ "$DISTRO" = "arch" ]; then
+            sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash mitigations=off nowatchdog"/' /etc/default/grub
+            sudo grub-mkconfig -o /boot/grub/grub.cfg
+        else
+            sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash mitigations=off nowatchdog"/' /etc/default/grub
+            sudo update-grub
+        fi
+    elif [ "$BOOTLOADER" = "limine" ]; then
+        echo "⚠️ Limine detected. Kernel parameters need manual editing in /boot/limine/limine.cfg"
     else
-        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash mitigations=off nowatchdog"/' /etc/default/grub
-        sudo update-grub
+        echo "⚠️ Bootloader not detected. Skipping kernel parameter tweaks."
     fi
 
     echo "🎮 Checking GPU..."
@@ -103,13 +127,19 @@ rollback() {
         sudo rm -f /etc/default/zramswap
     fi
 
-    echo "📝 Restoring GRUB defaults..."
-    if [ "$DISTRO" = "arch" ]; then
-        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
-        sudo grub-mkconfig -o /boot/grub/grub.cfg
+    echo "📝 Restoring kernel boot parameters..."
+    if [ "$BOOTLOADER" = "grub" ]; then
+        if [ "$DISTRO" = "arch" ]; then
+            sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
+            sudo grub-mkconfig -o /boot/grub/grub.cfg
+        else
+            sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
+            sudo update-grub
+        fi
+    elif [ "$BOOTLOADER" = "limine" ]; then
+        echo "⚠️ Limine detected. Rollback of kernel parameters must be done manually."
     else
-        sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
-        sudo update-grub
+        echo "⚠️ Bootloader not detected. Skipping kernel parameter restore."
     fi
 
     echo "🧹 Removing extra tools..."
@@ -149,7 +179,8 @@ status_check() {
     sensors | grep "Package" || echo "❌ sensors not configured"
 
     echo
-    echo "💻 Kernel GRUB params:"
+    echo "💻 Kernel Bootloader:"
+    echo "Detected: $BOOTLOADER"
     cat /proc/cmdline
 
     echo "========================================"
@@ -164,8 +195,9 @@ echo "========================================"
 echo " 🔧 Ryzen Laptop Optimizer Tool"
 echo "========================================"
 echo "Detected distro: $DISTRO"
+echo "Detected bootloader: $BOOTLOADER"
 echo "----------------------------------------"
-echo "1) Optimize (Enable TLP, ZRAM, GRUB tweaks, GPU check)"
+echo "1) Optimize (Enable TLP, ZRAM, kernel tweaks if GRUB, GPU check)"
 echo "2) Rollback (Restore default settings)"
 echo "3) Status   (Check current optimization status)"
 echo "q) Quit"
