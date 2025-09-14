@@ -1,0 +1,75 @@
+# =====================
+# Basic settings
+# =====================
+set $mod Mod4
+font pango:monospace 11, FontAwesome 11
+
+# =====================
+# Keybindings dasar
+# =====================
+bindsym $mod+Return exec alacritty
+bindsym $mod+d exec dmenu_run
+bindsym $mod+Shift+q kill
+bindsym $mod+Shift+r restart
+bindsym $mod+Shift+e exec "i3-msg exit"
+
+# =====================
+# Workspaces
+# =====================
+set $ws1 "1:  term"
+set $ws2 "2:  web"
+set $ws3 "3:  code"
+set $ws4 "4:  misc"
+
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+
+bindsym $mod+Shift+1 move container to workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4
+
+# =====================
+# Window tiling
+# =====================
+bindsym $mod+h split h
+bindsym $mod+v split v
+bindsym $mod+f fullscreen toggle
+bindsym $mod+Shift+space floating toggle
+
+# =====================
+# Audio & brightness
+# =====================
+bindsym XF86AudioRaiseVolume exec --no-startup-id amixer -q set Master 5%+
+bindsym XF86AudioLowerVolume exec --no-startup-id amixer -q set Master 5%-
+bindsym XF86AudioMute exec --no-startup-id amixer -q set Master toggle
+
+bindsym XF86MonBrightnessUp exec brightnessctl s +10%
+bindsym XF86MonBrightnessDown exec brightnessctl s 10%-
+
+# =====================
+# Startup apps
+# =====================
+exec --no-startup-id nm-applet
+exec --no-startup-id volumeicon
+exec --no-startup-id clipit
+exec --no-startup-id feh --bg-scale ~/Pictures/wallpaper.jpg
+exec --no-startup-id picom --config ~/.config/picom.conf
+
+# =====================
+# Zoom & proyektor
+# =====================
+bindsym $mod+z exec zoom
+bindsym $mod+p exec "xrandr --output HDMI-1 --auto --right-of eDP-1"
+bindsym $mod+Shift+p exec "xrandr --output HDMI-1 --same-as eDP-1 --auto"
+
+# =====================
+# Bar
+# =====================
+bar {
+    status_command i3status | ~/.config/i3/i3status_wrapper.py
+    position top
+    font pango:monospace 11, FontAwesome 11
+}
