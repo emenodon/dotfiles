@@ -1,0 +1,51 @@
+# launch terminal
+super + shift + Return
+    alacritty
+
+# app launcher
+super + r
+    rofi -show drun
+
+# close window
+super + q
+    bspc node -c
+
+# move focus
+super + {h,j,k,l}
+    bspc node -f {west,south,north,east}
+
+# move window
+super + shift + {h,j,k,l}
+    bspc node -s {west,south,north,east}
+
+# resize window
+super + alt + {h,j,k,l}
+    bspc node -z {left -20 0,right 20 0,top 0 -20,bottom 0 20}
+
+# ------------------------------------------------------------
+# WORKSPACES ("tabs")
+# ------------------------------------------------------------
+
+# switch to workspace 1–9
+super + {1-9}
+    bspc desktop -f {1-9}
+
+# move focused window to workspace 1–9
+super + shift + {1-9}
+    bspc node -d {1-9}
+
+# ------------------------------------------------------------
+# SCREENSHOTS (using scrot)
+# ------------------------------------------------------------
+
+# full screenshot (saved in ~/Pictures)
+Print
+    scrot ~/Screenshot/screenshot-%Y-%m-%d-%H%M%S.png
+
+# select area
+super + shift + Print
+    scrot -s ~/Screenshot/screenshot-%Y-%m-%d-%H%M%S.png
+
+# active window
+super + Print
+    scrot -u ~/Screenshot/screenshot-%Y-%m-%d-%H%M%S.png
