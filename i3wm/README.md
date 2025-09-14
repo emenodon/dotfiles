@@ -1,28 +1,49 @@
-(i3Config) Install paket dasar
-sudo apt update && sudo apt upgrade -y
+# i3 Config & Ryzen Optimization
 
-# i3 + utilitas dasar
+Minimal setup for i3 window manager on Ubuntu/Debian-based systems, plus Ryzen laptop optimization.
+
+
+
+## 🚀 Quick Start (Copy & Run)
+
+### Update system
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+### i3 + utilities
+```bash
 sudo apt install -y i3-wm i3status dmenu feh picom lxappearance \
     lightdm lightdm-gtk-greeter
-
-# Network, audio, file manager
+```
+### Network, audio, file manager
+```bash
 sudo apt install -y network-manager network-manager-gnome \
     pulseaudio pavucontrol thunar thunar-volman gvfs gvfs-backends \
     volumeicon-alsa clipit arandr xrandr brightnessctl
-
-# Terminal
+```
+### Terminal
+```bash
 sudo apt install -y alacritty
-
-# Fonts (untuk ikon)
+```
+### Fonts
+```bash
 sudo apt install -y fonts-font-awesome fonts-noto-color-emoji
+```
+## ⚙️ Config Files
 
---------------------------------------
+Copy the following to your home directory:
+```bash
+cp config ~/.config/i3/config
+```
+```bash
+cp i3status_config ~/.config/i3status/config
+```
+```bash
+cp i3status_wrapper.py ~/.config/i3/i3status_wrapper.py
+```
 
-# File to be placed
-File: ~/.config/i3/config
-File: ~/.config/i3status/config
-File: ~/.config/i3/i3status_wrapper.py
-
--------------------------------------
-
-(i3RyzenOptimization) just run the script ryzen-laptop-tool.sh
+## ⚡ Ryzen Optimization
+For Ryzen laptops, just run:
+```bash
+./ryzen-laptop-tool.sh
+```
