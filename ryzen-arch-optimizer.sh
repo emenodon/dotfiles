@@ -6,6 +6,7 @@
 #   [1] Optimize : auto-cpufreq, TLP, powertop, optional ZRAM
 #   [2] Rollback : disable/remove everything, reinstall power-profiles-daemon
 #   [3] Status   : show CPU/battery/governor/temp/service status
+#   [4] Battery  : set charge thresholds (80% / 90% / 100%)
 # ==========================================================
 
 set -e
@@ -92,6 +93,54 @@ rollback() {
     echo "✅ Rollback complete! Reboot to restore defaults."
 }
 
+battery_menu() {
+    clear
+    echo "============================================"
+    echo " 🔋 Battery Charge Thresholds"
+    echo "============================================"
+    echo "1) Max 80% (best battery health)"
+    echo "2) Max 90% (balanced)"
+    echo "3) Max 100% (full runtime, more wear)"
+    echo "q) Back"
+    echo "============================================"
+    read -rp "Choose option [1/2/3/q]: " bchoice
+
+    # Make sure TLP config has threshold lines
+    sudo grep -q '^START_CHARGE_THRESH_BAT0' /etc/tlp.conf || \
+        echo "START_CHARGE_THRESH_BAT0=40" | sudo tee -a /etc/tlp.conf >/dev/null
+
+    sudo grep -q '^STOP_CHARGE_THRESH_BAT0' /etc/tlp.conf || \
+        echo "STOP_CHARGE_THRESH_BAT0=80" | sudo tee -a /etc/tlp.conf >/dev/null
+
+    case $bchoice in
+        1)
+            sudo sed -i 's/^STOP_CHARGE_THRESH_BAT0.*/STOP_CHARGE_THRESH_BAT0=80/' /etc/tlp.conf
+            echo "🔋 Battery cap set to 80%"
+            ;;
+        2)
+            sudo sed -i 's/^STOP_CHARGE_THRESH_BAT0.*/STOP_CHARGE_THRESH_BAT0=90/' /etc/tlp.conf
+            echo "🔋 Battery cap set to 90%"
+            ;;
+        3)
+            sudo sed -i 's/^STOP_CHARGE_THRESH_BAT0.*/STOP_CHARGE_THRESH_BAT0=100/' /etc/tlp.conf
+            echo "🔋 Battery cap set to 100%"
+            ;;
+        q|Q)
+            return
+            ;;
+        *)
+            echo "Invalid choice!"
+            ;;
+    esac
+
+    # Apply changes immediately
+    sudo tlp start
+    echo
+    echo "✅ Applied! Current threshold:"
+    grep "STOP_CHARGE_THRESH_BAT0" /etc/tlp.conf
+    sudo tlp-stat -b | grep "charge_control_end_threshold"
+}
+
 status_check() {
     echo "============================================"
     echo " 📊 Ryzen Optimizer Status"
@@ -111,6 +160,9 @@ status_check() {
     echo
     echo "🔋 Battery Status:"
     upower -i $(upower -e | grep BAT) | grep -E "state|percentage" || echo "❌ upower not available"
+    echo
+    echo "Charge thresholds:"
+    sudo tlp-stat -b | grep -E "charge_control" || echo "❌ Not available"
 
     echo
     echo "⚙️ Services:"
@@ -136,14 +188,16 @@ echo "============================================"
 echo "1) Optimize (Enable auto power saving)"
 echo "2) Rollback (Restore defaults)"
 echo "3) Status   (Check current settings)"
+echo "4) Battery  (Set charge thresholds)"
 echo "q) Quit"
 echo "============================================"
-read -rp "Choose option [1/2/3/q]: " choice
+read -rp "Choose option [1/2/3/4/q]: " choice
 
 case $choice in
     1) optimize ;;
     2) rollback ;;
     3) status_check ;;
+    4) battery_menu ;;
     q|Q) echo "❌ Quit." ;;
     *) echo "Invalid choice!" ;;
 esac
