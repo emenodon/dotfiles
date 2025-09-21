@@ -1,7 +1,7 @@
 #!/bin/bash
 # MacBook Power Management Tool (Arch Linux)
-# Features: Optimize (TLP + mbpfan + powertop), Rollback, Status
-# Author: ChatGPT
+# Features: Optimize (TLP + mbpfan + powertop), Rollback, Status, Uninstall
+# Version: paru edition
 
 set -e
 
@@ -10,7 +10,7 @@ BACKUP_DATE=$(date +%F-%H%M)
 optimize() {
     echo "[1/5] Install required packages..."
     sudo pacman -Syu --noconfirm tlp tlp-rdw powertop
-    yay -S --noconfirm mbpfan-git
+    paru -S --noconfirm mbpfan-git
 
     echo "[2/5] Backup configs..."
     sudo cp /etc/tlp.conf /etc/tlp.conf.backup.$BACKUP_DATE 2>/dev/null || true
@@ -80,11 +80,7 @@ rollback() {
         echo "No mbpfan backup found."
     fi
 
-    echo "[3/3] Optionally remove packages:"
-    echo "  sudo pacman -Rns tlp tlp-rdw powertop"
-    echo "  yay -Rns mbpfan-git"
-
-    echo "✅ Rollback complete. Reboot recommended!"
+    echo "[3/3] Rollback complete. Reboot recommended!"
 }
 
 status() {
@@ -102,6 +98,22 @@ status() {
     echo "(Run: sudo powertop --html=report.html to generate a detailed report)"
 }
 
+uninstall_all() {
+    echo "[1/3] Disable services..."
+    sudo systemctl disable --now tlp || true
+    sudo systemctl disable --now mbpfan || true
+    sudo systemctl disable --now powertop || true
+
+    echo "[2/3] Remove packages..."
+    sudo pacman -Rns --noconfirm tlp tlp-rdw powertop || true
+    paru -Rns --noconfirm mbpfan-git || true
+
+    echo "[3/3] Cleanup configs..."
+    sudo rm -f /etc/tlp.conf /etc/mbpfan.conf
+
+    echo "✅ Uninstall complete. System back to default. Reboot recommended!"
+}
+
 menu() {
     echo "==================================="
     echo " MacBook Power Management Tool"
@@ -109,14 +121,16 @@ menu() {
     echo "1) Optimize (install & configure)"
     echo "2) Rollback (restore backup)"
     echo "3) Status (check current state)"
-    echo "4) Exit"
-    read -p "Choose option [1-4]: " choice
+    echo "4) Uninstall (remove everything)"
+    echo "5) Exit"
+    read -p "Choose option [1-5]: " choice
 
     case $choice in
         1) optimize ;;
         2) rollback ;;
         3) status ;;
-        4) exit 0 ;;
+        4) uninstall_all ;;
+        5) exit 0 ;;
         *) echo "Invalid option";;
     esac
 }
