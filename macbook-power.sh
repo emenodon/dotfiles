@@ -1,22 +1,23 @@
 #!/bin/bash
 # MacBook Power Management Tool (Arch Linux)
 # Features: Optimize (TLP + mbpfan + powertop), Rollback, Status, Uninstall
-# Version: paru edition
+# Version: paru edition + powertop.service
 
 set -e
 
 BACKUP_DATE=$(date +%F-%H%M)
+POWERTOP_SERVICE="/etc/systemd/system/powertop.service"
 
 optimize() {
-    echo "[1/5] Install required packages..."
+    echo "[1/6] Install required packages..."
     sudo pacman -Syu --noconfirm tlp tlp-rdw powertop
     paru -S --noconfirm mbpfan-git
 
-    echo "[2/5] Backup configs..."
+    echo "[2/6] Backup configs..."
     sudo cp /etc/tlp.conf /etc/tlp.conf.backup.$BACKUP_DATE 2>/dev/null || true
     sudo cp /etc/mbpfan.conf /etc/mbpfan.conf.backup.$BACKUP_DATE 2>/dev/null || true
 
-    echo "[3/5] Apply TLP config..."
+    echo "[3/6] Apply TLP config..."
     sudo tee /etc/tlp.conf > /dev/null <<'EOF'
 # --- MacBook Power Saving Config ---
 CPU_SCALING_GOVERNOR_ON_AC=performance
@@ -40,7 +41,7 @@ DISK_APM_LEVEL_ON_BAT="128"
 DISK_APM_LEVEL_ON_AC="254"
 EOF
 
-    echo "[4/5] Apply mbpfan config..."
+    echo "[4/6] Apply mbpfan config..."
     sudo tee /etc/mbpfan.conf > /dev/null <<'EOF'
 [general]
 min_fan1_speed = 2000
@@ -51,7 +52,22 @@ max_temp = 80
 polling_interval = 7
 EOF
 
-    echo "[5/5] Enable services..."
+    echo "[5/6] Create powertop service..."
+    sudo tee $POWERTOP_SERVICE > /dev/null <<'EOF'
+[Unit]
+Description=Powertop tunings
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/powertop --auto-tune
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    echo "[6/6] Enable services..."
+    sudo systemctl daemon-reload
     sudo systemctl enable --now tlp
     sudo systemctl enable --now mbpfan
     sudo systemctl enable --now powertop
@@ -87,7 +103,7 @@ status() {
     echo "=== Service Status ==="
     systemctl is-enabled tlp 2>/dev/null && echo "TLP: enabled" || echo "TLP: disabled"
     systemctl is-enabled mbpfan 2>/dev/null && echo "mbpfan: enabled" || echo "mbpfan: disabled"
-    systemctl is-enabled powertop 2>/dev/null && echo "powertop: enabled" || echo "powertop: disabled"
+    systemctl is-enabled powertop 2>/dev/null && echo "Powertop: enabled" || echo "Powertop: disabled"
 
     echo
     echo "=== Battery/Power Info ==="
@@ -99,16 +115,20 @@ status() {
 }
 
 uninstall_all() {
-    echo "[1/3] Disable services..."
+    echo "[1/4] Disable services..."
     sudo systemctl disable --now tlp || true
     sudo systemctl disable --now mbpfan || true
     sudo systemctl disable --now powertop || true
 
-    echo "[2/3] Remove packages..."
+    echo "[2/4] Remove packages..."
     sudo pacman -Rns --noconfirm tlp tlp-rdw powertop || true
     paru -Rns --noconfirm mbpfan-git || true
 
-    echo "[3/3] Cleanup configs..."
+    echo "[3/4] Remove powertop service..."
+    sudo rm -f $POWERTOP_SERVICE
+    sudo systemctl daemon-reload
+
+    echo "[4/4] Cleanup configs..."
     sudo rm -f /etc/tlp.conf /etc/mbpfan.conf
 
     echo "✅ Uninstall complete. System back to default. Reboot recommended!"
