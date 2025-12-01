@@ -19,6 +19,11 @@ Built with a focus on **minimalism**, **lightweight performance**, and a **funct
 - 🎨 Clean look with only essential theming  
 - 🛠 Easy to reproduce on any system  
 
+---
+
+# 🧹 System Maintenance Tools  
+Extra utilities included in this repo.
+
 <details>
   <summary><strong>[GUIDE] Automatic Cleanup Setup (Systemd Service + Timer)</strong></summary>
 
