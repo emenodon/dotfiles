@@ -33,7 +33,7 @@ Follow these steps to enable automatic weekly cleanup on Arch/CachyOS.
 
 ---
 
-## 1. Download the cleaner script  
+### 1. Download the cleaner script  
 Download the script to your system:
 
 ``wget -O /usr/local/bin/cleaner.sh https://raw.githubusercontent.com/emenodon/dotfiles/master/cleaner.sh``
@@ -44,7 +44,7 @@ Make it executable:
 
 ---
 
-## 2. Create the systemd service
+### 2. Create the systemd service
 
 ``sudo nano /etc/systemd/system/cleaner.service``
 
@@ -61,7 +61,7 @@ ExecStart=/usr/local/bin/cleaner.sh
 
 ---
 
-## 3. Create the systemd timer
+### 3. Create the systemd timer
 
 ``sudo nano /etc/systemd/system/cleaner.timer``
 
@@ -81,14 +81,14 @@ WantedBy=timers.target
 
 ---
 
-## 4. Enable the timer
+### 4. Enable the timer
 
 ``sudo systemctl daemon-reload
 sudo systemctl enable --now cleaner.timer``
 
 ---
 
-## 5. (Optional) Check next run time  
+### 5. (Optional) Check next run time  
 ``systemctl list-timers | grep cleaner``
 
 ---
