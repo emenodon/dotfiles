@@ -36,7 +36,8 @@ Create the file:
 
 Paste this:
 
-``#!/bin/bash
+```bash
+#!/bin/bash
 # Ultra Fast Cleaner for Arch
 
 if [ "$EUID" -ne 0 ]; then
@@ -62,7 +63,7 @@ find ~/.config -maxdepth 1 -type d -name "*-electron*" -exec rm -rf {}/Cache/* \
 journalctl --vacuum-size=200M &>/dev/null
 
 exit 0
-``
+```
 
 Make executable:
 
